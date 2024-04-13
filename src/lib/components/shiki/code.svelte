@@ -17,15 +17,18 @@
 	export let code: string
 	export let lang: BundledLanguage | SpecialLanguage
 	export let theme = 'poimandres'
-	export let options: MagicMoveRenderOptions & MagicMoveDifferOptions = {
-		duration: 2000,
-		containerStyle: false,
-	}
+	export let options: MagicMoveRenderOptions & MagicMoveDifferOptions = {}
 
 	let container: HTMLPreElement
 	let machine: ReturnType<typeof createMagicMoveMachine>
 	let renderer: MagicMoveRenderer
 	let ready = false
+
+	const is = {
+		htmlEl: (el: Element): el is HTMLElement => el instanceof HTMLElement,
+		token: (el: HTMLElement) => el.className.includes('shiki-magic-move-item'),
+		newLine: (el: HTMLElement) => el.tagName === 'BR',
+	}
 
 	async function init() {
 		machine = createMagicMoveMachine(
@@ -34,7 +37,7 @@
 		)
 		renderer = new MagicMoveRenderer(container)
 		Object.assign(renderer.options, options)
-		const result = machine.commit(code)
+		const result = machine.commit(code.trim())
 		renderer.render(result.current)
 		ready = true
 	}
@@ -47,27 +50,43 @@
 	}
 
 	export function update(code: string) {
-		return render(code[0])
+		return render(code[0].trim())
 	}
 
-	const is = {
-		htmlEl: (el: Element): el is HTMLElement => el instanceof HTMLElement,
-		token: (el: HTMLElement) => el.className.includes('shiki-magic-move-item'),
-		newLine: (el: HTMLElement) => el.tagName === 'BR',
+	function getLines(string: TemplateStringsArray) {
+		let range = string[0]
+		if (range === '*') return []
+		return range.split(',').flatMap((v) => v.split('-').map(Number))
 	}
 
-	export function selectLines(lines: number[]) {
+	export function selectLines(string: TemplateStringsArray) {
+		const lines = getLines(string)
+		const children = container.children
 		const promises: PromiseFunction[] = []
 
 		let currentLine = 1
-		for (const child of container.children) {
+		for (const child of children) {
 			if (!is.htmlEl(child)) return
 			if (is.token(child)) {
+				if (lines.length < 1) {
+					child.classList.remove('selected', 'deselected')
+					continue
+				}
 				const isSelected = lines.includes(currentLine)
 				promises.push(() => {
 					// @ts-expect-error
 					const { promise, resolve } = Promise.withResolvers()
-					child.ontransitionend = resolve
+					const selectedToDeselect =
+						!isSelected && child.classList.contains('selected')
+					const deselectedToSelect =
+						isSelected && child.classList.contains('deselected')
+					const nothingToDeselect =
+						!isSelected &&
+						!child.classList.contains('deselected') &&
+						!child.classList.contains('deselected')
+					const willTransition =
+						selectedToDeselect || deselectedToSelect || nothingToDeselect
+					willTransition ? (child.ontransitionend = resolve) : resolve()
 					child.classList.toggle('selected', isSelected)
 					child.classList.toggle('deselected', !isSelected)
 					return promise
@@ -83,10 +102,11 @@
 
 <pre bind:this={container} class="shiki-magic-move-container"></pre>
 
+<!-- todo pass styles to pre -->
 <style>
 	pre {
-		width: max-content;
-		margin: 0 auto;
+		width: 860px;
+		margin-inline: auto;
 		text-align: left;
 	}
 </style>

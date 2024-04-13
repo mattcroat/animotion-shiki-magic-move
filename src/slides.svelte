@@ -1,34 +1,44 @@
 <script lang="ts">
 	import { Presentation, Slide, CodeBlock as Code } from '@components'
 
-	let multiline = `
+	let code: any
+
+	async function animate() {
+		await code.update`
 <script>
-	let count = $state(0)
-	let double = $derived(count * 2)
+  let count = $state(0)
+  let double = $derived(count * 2)
 <\/script>
 
 <button onclick={() => count++}>
-	{count}
+  {double}
 </button>
-	`.trim()
-
-	async function toggleAnimation() {
-		// toggle = !toggle
-		// toggle ? code.update`let bool = true;` : code.update`let bool;`
-
-		console.log('start')
-		await code.selectLines([2])
-		console.log('end')
+`
+		await code.selectLines`2`
+		await code.selectLines`2-3`
+		await code.selectLines`2-3,7`
+		await code.selectLines`*`
 	}
-
-	let code: any
-	// let toggle = false
 </script>
 
-<svelte:window on:click={toggleAnimation} />
+<svelte:window on:click={animate} />
 
 <Presentation>
 	<Slide class="h-full w-full grid place-content-center">
-		<Code bind:this={code} lang="svelte" code={multiline} />
+		<Code
+			bind:this={code}
+			lang="svelte"
+			options={{ duration: 1000, stagger: 3 }}
+			code={`
+<script>
+  let count = 0
+  $: double = count * 2
+<\/script>
+
+<button on:click={() => count++}>
+  {double}
+</button>
+`}
+		/>
 	</Slide>
 </Presentation>
