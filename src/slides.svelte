@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Presentation, Slide, CodeBlock as Code } from '@components'
 
-	let code: any
+	let code: Code
 
 	async function animate() {
 		await code.update`
@@ -14,10 +14,13 @@
   {double}
 </button>
 `
+
 		await code.selectLines`2`
 		await code.selectLines`2-3`
 		await code.selectLines`2-3,7`
 		await code.selectLines`*`
+
+		await code.selectAll`count`
 	}
 </script>
 

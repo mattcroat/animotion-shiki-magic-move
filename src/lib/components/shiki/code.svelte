@@ -30,6 +30,9 @@
 		htmlEl: (el: Element): el is HTMLElement => el instanceof HTMLElement,
 		token: (el: HTMLElement) => el.className.includes('shiki-magic-move-item'),
 		newLine: (el: HTMLElement) => el.tagName === 'BR',
+		match: (el: HTMLElement, selection: string) => {
+			return el.innerHTML.includes(selection)
+		},
 	}
 
 	async function init() {
@@ -51,7 +54,7 @@
 		await renderer.render(result.current)
 	}
 
-	export function update(code: string) {
+	export function update(code: TemplateStringsArray) {
 		return render(code[0].trim())
 	}
 
@@ -75,6 +78,40 @@
 					continue
 				}
 				const isSelected = lines.includes(currentLine)
+				promises.push(() => {
+					// @ts-expect-error
+					const { promise, resolve } = Promise.withResolvers()
+					const selectedToDeselect =
+						!isSelected && child.classList.contains('selected')
+					const deselectedToSelect =
+						isSelected && child.classList.contains('deselected')
+					const nothingToDeselect =
+						!isSelected &&
+						!child.classList.contains('deselected') &&
+						!child.classList.contains('deselected')
+					const willTransition =
+						selectedToDeselect || deselectedToSelect || nothingToDeselect
+					willTransition ? (child.ontransitionend = resolve) : resolve()
+					child.classList.toggle('selected', isSelected)
+					child.classList.toggle('deselected', !isSelected)
+					return promise
+				})
+			}
+			if (is.newLine(child)) currentLine++
+		}
+		return Promise.all(promises.map((cb) => cb()))
+	}
+
+	export function selectAll(string: TemplateStringsArray) {
+		const selection = string[0]
+		const children = container.children
+		const promises: PromiseFunction[] = []
+
+		let currentLine = 1
+		for (const child of children) {
+			if (!is.htmlEl(child)) return
+			if (is.token(child)) {
+				const isSelected = is.match(child, selection)
 				promises.push(() => {
 					// @ts-expect-error
 					const { promise, resolve } = Promise.withResolvers()
