@@ -19,6 +19,8 @@
 	export let theme = 'poimandres'
 	export let options: MagicMoveRenderOptions & MagicMoveDifferOptions = {}
 
+	delete $$restProps.class
+
 	let container: HTMLPreElement
 	let machine: ReturnType<typeof createMagicMoveMachine>
 	let renderer: MagicMoveRenderer
@@ -100,9 +102,12 @@
 	onMount(init)
 </script>
 
-<pre bind:this={container} class="shiki-magic-move-container"></pre>
+<pre
+	bind:this={container}
+	class="shiki-magic-move-container {$$props.class || ''}"
+	{...$$restProps}></pre>
 
-<!-- todo pass styles to pre -->
+<!-- todo: remove -->
 <style>
 	pre {
 		width: 860px;
