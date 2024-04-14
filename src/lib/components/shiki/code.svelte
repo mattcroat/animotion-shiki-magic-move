@@ -35,6 +35,20 @@
 		},
 	}
 
+	function indent(string: string) {
+		const tabs = string
+			.split('\n')
+			.filter(Boolean)[0]
+			.split('')
+			.filter((char) => char === '\t')
+			.join('')
+		return string
+			.split(/(\n)/)
+			.map((line) => line.replace(tabs, ''))
+			.join('')
+			.trim()
+	}
+
 	async function init() {
 		machine = createMagicMoveMachine(
 			(code) => codeToKeyedTokens(highlighter, code, { lang, theme }),
@@ -42,20 +56,20 @@
 		)
 		renderer = new MagicMoveRenderer(container)
 		Object.assign(renderer.options, options)
-		const result = machine.commit(code.trim())
+		const result = machine.commit(indent(code))
 		renderer.render(result.current)
 		ready = true
 	}
 
 	async function render(code: string) {
 		if (!ready) return
-		const result = machine.commit(code)
+		const result = machine.commit(indent(code))
 		if (result.previous) renderer.replace(result.previous)
 		await renderer.render(result.current)
 	}
 
 	export function update(code: TemplateStringsArray) {
-		return render(code[0].trim())
+		return render(code[0])
 	}
 
 	function getLines(string: TemplateStringsArray) {
