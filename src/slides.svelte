@@ -21,6 +21,9 @@
 		await code.selectLines`*`
 
 		await code.selectAll`count`
+		await code.selectAll`double`
+
+		await code.selectLines`*`
 	}
 </script>
 
@@ -30,6 +33,7 @@
 	<Slide class="h-full w-full grid place-content-center">
 		<Code
 			bind:this={code}
+			class="w-[860px] mx-auto"
 			lang="svelte"
 			options={{ duration: 1000, stagger: 3 }}
 			code={`

@@ -78,6 +78,23 @@
 		return range.split(',').flatMap((v) => v.split('-').map(Number))
 	}
 
+	function transition(el: HTMLElement, selected: boolean) {
+		// @ts-expect-error
+		const { promise, resolve } = Promise.withResolvers()
+		const selectedToDeselect = !selected && el.classList.contains('selected')
+		const deselectedToSelect = selected && el.classList.contains('deselected')
+		const nothingToDeselect =
+			!selected &&
+			!el.classList.contains('deselected') &&
+			!el.classList.contains('deselected')
+		const willTransition =
+			selectedToDeselect || deselectedToSelect || nothingToDeselect
+		willTransition ? (el.ontransitionend = resolve) : resolve()
+		el.classList.toggle('selected', selected)
+		el.classList.toggle('deselected', !selected)
+		return promise
+	}
+
 	export function selectLines(string: TemplateStringsArray) {
 		const lines = getLines(string)
 		const children = container.children
@@ -87,33 +104,15 @@
 		for (const child of children) {
 			if (!is.htmlEl(child)) return
 			if (is.token(child)) {
-				if (lines.length < 1) {
-					child.classList.remove('selected', 'deselected')
-					continue
-				}
-				const isSelected = lines.includes(currentLine)
-				promises.push(() => {
-					// @ts-expect-error
-					const { promise, resolve } = Promise.withResolvers()
-					const selectedToDeselect =
-						!isSelected && child.classList.contains('selected')
-					const deselectedToSelect =
-						isSelected && child.classList.contains('deselected')
-					const nothingToDeselect =
-						!isSelected &&
-						!child.classList.contains('deselected') &&
-						!child.classList.contains('deselected')
-					const willTransition =
-						selectedToDeselect || deselectedToSelect || nothingToDeselect
-					willTransition ? (child.ontransitionend = resolve) : resolve()
-					child.classList.toggle('selected', isSelected)
-					child.classList.toggle('deselected', !isSelected)
-					return promise
-				})
+				let selected = false
+				lines.length === 0
+					? (selected = true)
+					: (selected = lines.includes(currentLine))
+				promises.push(transition(child, selected))
 			}
 			if (is.newLine(child)) currentLine++
 		}
-		return Promise.all(promises.map((cb) => cb()))
+		return Promise.all(promises)
 	}
 
 	export function selectAll(string: TemplateStringsArray) {
@@ -125,29 +124,12 @@
 		for (const child of children) {
 			if (!is.htmlEl(child)) return
 			if (is.token(child)) {
-				const isSelected = is.match(child, selection)
-				promises.push(() => {
-					// @ts-expect-error
-					const { promise, resolve } = Promise.withResolvers()
-					const selectedToDeselect =
-						!isSelected && child.classList.contains('selected')
-					const deselectedToSelect =
-						isSelected && child.classList.contains('deselected')
-					const nothingToDeselect =
-						!isSelected &&
-						!child.classList.contains('deselected') &&
-						!child.classList.contains('deselected')
-					const willTransition =
-						selectedToDeselect || deselectedToSelect || nothingToDeselect
-					willTransition ? (child.ontransitionend = resolve) : resolve()
-					child.classList.toggle('selected', isSelected)
-					child.classList.toggle('deselected', !isSelected)
-					return promise
-				})
+				const selected = is.match(child, selection)
+				promises.push(transition(child, selected))
 			}
 			if (is.newLine(child)) currentLine++
 		}
-		return Promise.all(promises.map((cb) => cb()))
+		return Promise.all(promises)
 	}
 
 	onMount(init)
@@ -158,11 +140,8 @@
 	class="shiki-magic-move-container {$$props.class || ''}"
 	{...$$restProps}></pre>
 
-<!-- todo: remove -->
 <style>
 	pre {
-		width: 860px;
-		margin-inline: auto;
 		text-align: left;
 	}
 </style>
