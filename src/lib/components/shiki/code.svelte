@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
-	import { type BundledLanguage, type SpecialLanguage } from 'shiki'
+	import {
+		type BundledLanguage,
+		type BundledTheme,
+		type SpecialLanguage,
+	} from 'shiki'
 	import {
 		codeToKeyedTokens,
 		createMagicMoveMachine,
@@ -13,10 +17,12 @@
 	import highlighter from './highlighter'
 
 	type PromiseFunction = () => Promise<void>
+	type Lang = BundledLanguage | SpecialLanguage
+	type Theme = BundledTheme
 
 	export let code: string
-	export let lang: BundledLanguage | SpecialLanguage
-	export let theme = 'poimandres'
+	export let lang: Lang
+	export let theme: Theme = 'poimandres'
 	export let options: MagicMoveRenderOptions & MagicMoveDifferOptions = {}
 
 	delete $$restProps.class
@@ -30,9 +36,6 @@
 		htmlEl: (el: Element): el is HTMLElement => el instanceof HTMLElement,
 		token: (el: HTMLElement) => el.className.includes('shiki-magic-move-item'),
 		newLine: (el: HTMLElement) => el.tagName === 'BR',
-		match: (el: HTMLElement, selection: string) => {
-			return el.innerHTML.includes(selection)
-		},
 	}
 
 	function indent(string: string) {
@@ -115,8 +118,9 @@
 		return Promise.all(promises)
 	}
 
-	export function selectAll(string: TemplateStringsArray) {
-		const selection = string[0]
+	export function selectToken(string: TemplateStringsArray) {
+		const selection = string[0].split(' ')
+		const line = typeof +selection[0] === 'number' ? +selection[0] : false
 		const children = container.children
 		const promises: PromiseFunction[] = []
 
@@ -124,7 +128,10 @@
 		for (const child of children) {
 			if (!is.htmlEl(child)) return
 			if (is.token(child)) {
-				const selected = is.match(child, selection)
+				let selected = false
+				if (line && line === currentLine)
+					selected = selection.includes(child.textContent!)
+				if (!line) selected = selection.includes(child.textContent!)
 				promises.push(transition(child, selected))
 			}
 			if (is.newLine(child)) currentLine++

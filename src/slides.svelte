@@ -20,8 +20,13 @@
 		await code.selectLines`2-3,7`
 		await code.selectLines`*`
 
-		await code.selectAll`count`
-		await code.selectAll`double`
+		await code.selectToken`6 onclick = { () => count ++ } }>`
+		await code.selectToken`6 count ++`
+		await code.selectToken`2 count`
+		await code.selectToken`2 ( 0 )`
+		await code.selectToken`3 double`
+		await code.selectToken`3 ( count * 2 )`
+		await code.selectToken`double {double}`
 
 		await code.selectLines`*`
 	}
