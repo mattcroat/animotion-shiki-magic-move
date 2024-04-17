@@ -41,6 +41,7 @@
 			class="w-[860px] mx-auto"
 			lang="svelte"
 			options={{ duration: 1000, stagger: 3 }}
+			lines={true}
 			code={`
 				<script>
 					let count = 0

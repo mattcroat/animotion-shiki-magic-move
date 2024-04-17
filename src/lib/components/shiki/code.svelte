@@ -24,6 +24,7 @@
 	export let lang: Lang
 	export let theme: Theme = 'poimandres'
 	export let options: MagicMoveRenderOptions & MagicMoveDifferOptions = {}
+	export let lines = false
 
 	delete $$restProps.class
 
@@ -145,10 +146,36 @@
 <pre
 	bind:this={container}
 	class="shiki-magic-move-container {$$props.class || ''}"
+	class:lines
 	{...$$restProps}></pre>
 
 <style>
 	pre {
+		tab-size: 2;
 		text-align: left;
+	}
+
+	pre.lines {
+		counter-reset: count 1;
+	}
+
+	pre.lines :global(br + span) {
+		position: relative;
+		font-family: 'Monaspace Neon', monospace;
+		counter-increment: count;
+	}
+
+	pre.lines :global(br + br) {
+		counter-increment: count;
+	}
+
+	pre.lines :global(span:nth-of-type(1)::before),
+	pre.lines :global(br + span::before) {
+		content: counter(count);
+		position: absolute;
+		top: 0px;
+		left: -60px;
+		color: oklch(100% 0 0);
+		opacity: 0.2;
 	}
 </style>
